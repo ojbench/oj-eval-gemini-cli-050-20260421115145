@@ -95,6 +95,14 @@ class ACMOJClient:
 
         return result
 
+    def submit_cpp(self, problem_id: int, code: str) -> Optional[Dict]:
+        data = {"language": "cpp", "code": code}
+        result = self._make_request("POST", f"/problem/{problem_id}/submit", data=data)
+        if result and 'id' in result:
+            self._save_submission_id(result['id'])
+
+        return result
+
     def get_submission_detail(self, submission_id: int) -> Optional[Dict]:
         return self._make_request("GET", f"/submission/{submission_id}")
 
@@ -114,6 +122,11 @@ def main():
     submit_parser.add_argument("--problem-id", type=int, required=True, help="Problem ID")
     submit_parser.add_argument("--git-url", type=str, required=True, help="Git repository URL")
 
+    # C++ submission sub-command
+    submit_cpp_parser = subparsers.add_parser("submit_cpp", help="Submit C++ code")
+    submit_cpp_parser.add_argument("--problem-id", type=int, required=True, help="Problem ID")
+    submit_cpp_parser.add_argument("--file", type=str, required=True, help="C++ source file")
+
     # Sub-command for checking submission status
     status_parser = subparsers.add_parser("status", help="Check submission status")
     status_parser.add_argument("--submission-id", type=int, required=True, help="Submission ID")
@@ -132,6 +145,10 @@ def main():
 
     if args.command == "submit":
         result = client.submit_git(args.problem_id, args.git_url)
+    elif args.command == "submit_cpp":
+        with open(args.file, 'r') as f:
+            code = f.read()
+        result = client.submit_cpp(args.problem_id, code)
     elif args.command == "status":
         result = client.get_submission_detail(args.submission_id)
     elif args.command == "abort":
